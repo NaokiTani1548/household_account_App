@@ -15,4 +15,7 @@ public class Expense {
     private String category;
     private Double amount;
     private LocalDate date;
+    
+    @Column(nullable = false)
+    private Long userId;
 }

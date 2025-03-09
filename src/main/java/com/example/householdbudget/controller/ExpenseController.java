@@ -19,9 +19,9 @@ public class ExpenseController {
     @Autowired
     private ExpenseRepository expenseRepository;
 
-    @GetMapping
-    public List<Expense> getAllExpenses() {
-        return expenseRepository.findAll();
+    @GetMapping("/{userId}")
+    public List<Expense> getAllExpenses(@PathVariable("userId") Long userId) {
+        return expenseRepository.findByUserId(userId);
     }
 
     @PostMapping
@@ -29,18 +29,17 @@ public class ExpenseController {
         return expenseRepository.save(expense);
     }
 
-    @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteExpense(@PathVariable("id") Long id) {
-        if (!expenseRepository.existsById(id)) {
-            return ResponseEntity.notFound().build();
-        }
-        expenseRepository.deleteById(id);
-        return ResponseEntity.noContent().build();
+    @DeleteMapping("/{userId}/{id}")
+    public ResponseEntity<Object> deleteExpense(@PathVariable("userId") Long userId, @PathVariable("id") Long id) {
+    	return expenseRepository.findByIdAndUserId(id, userId).map(expense -> {
+    		expenseRepository.delete(expense);
+    		return ResponseEntity.noContent().build();
+    	}).orElseGet(() -> ResponseEntity.notFound().build());
     }
     
-    @PutMapping("/{id}")
-    public ResponseEntity<Expense> updateExpense(@PathVariable("id") Long id, @RequestBody Expense updatedExpense) {
-        return expenseRepository.findById(id).map(expense -> {
+    @PutMapping("/{userId}/{id}")
+    public ResponseEntity<Expense> updateExpense(@PathVariable("userId") Long userId, @PathVariable("id") Long id, @RequestBody Expense updatedExpense) {
+        return expenseRepository.findByIdAndUserId(id, userId).map(expense -> {
             expense.setCategory(updatedExpense.getCategory());
             expense.setAmount(updatedExpense.getAmount());
             expense.setDate(updatedExpense.getDate());

@@ -44,7 +44,8 @@ const EditExpenseDialog = ({ open, onClose, expense, onUpdate, categories }) => 
         if (!expense)
             return;
         const updatedExpense = Object.assign(Object.assign({}, expense), { category, amount: parseFloat(amount), date });
-        axios_1.default.put(`http://localhost:8080/api/expenses/${expense.id}`, updatedExpense)
+        const userId = localStorage.getItem('userId');
+        axios_1.default.put(`http://localhost:8080/api/expenses/${userId}/${expense.id}`, updatedExpense)
             .then(() => {
             onUpdate(updatedExpense);
             onClose();

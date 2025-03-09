@@ -12,6 +12,7 @@ interface Expense {
   category: string;
   amount: number;
   date: string;
+  userId: number;
 }
 
 const AddExpense: React.FC<AddExpenseProps> = ({ onAddExpense ,categories}) => {
@@ -19,19 +20,31 @@ const AddExpense: React.FC<AddExpenseProps> = ({ onAddExpense ,categories}) => {
   const [amount, setAmount] = useState('');
   const [date, setDate] = useState('');
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const expense = { category, amount: parseFloat(amount), date };
-    axios.post('http://localhost:8080/api/expenses', expense)
-      .then(response => {
-        onAddExpense(response.data);
-        setCategory('');
-        setAmount('');
-        setDate('');
-      })
-      .catch(error => {
-        console.error('Error adding expense:', error);
+    const userId = localStorage.getItem('userId');
+    const expense = { category: category, amount: parseFloat(amount), date: date ,userId: Number(userId)};
+    try {
+      const response = await fetch("http://localhost:8080/api/expenses", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${localStorage.getItem("jwt")}`,
+        },
+        body: JSON.stringify(expense),
       });
+      if (!response.ok) {
+        throw new Error("Failed to add expense");
+      }
+      const data = await response.json();
+      console.log("Expense added:", data);
+      setCategory('');
+      setAmount('');
+      setDate('');
+      onAddExpense(data);
+      } catch (error) {
+        console.error("Error adding expense:", error);
+      }
   };
 
   return (

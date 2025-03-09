@@ -14,6 +14,7 @@ interface Expense {
   category: string;
   amount: number;
   date: string;
+  userId: number;
 }
 
 interface ExpenseListProps {
@@ -57,7 +58,8 @@ const calculateCategoryTotals = (expenses: Expense[]) => {
   const [categoryTotals, setCategoryTotals] = useState<{ [key: string]: number }>({});
 
   const handleDelete = (id: number) => {
-    axios.delete(`http://localhost:8080/api/expenses/${id}`)
+    const userId = Number(localStorage.getItem("userId"));
+    axios.delete(`http://localhost:8080/api/expenses/${userId}/${id}`)
       .then(() => {
         setExpenses(prevExpenses => prevExpenses.filter(expense => expense.id !== id));
       })

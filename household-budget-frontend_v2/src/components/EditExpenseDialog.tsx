@@ -7,6 +7,7 @@ interface Expense {
     category: string;
     amount: number;
     date: string;
+    userId: number;
   }
 
 interface EditExpenseDialogProps {
@@ -34,8 +35,8 @@ const EditExpenseDialog: React.FC<EditExpenseDialogProps> = ({ open, onClose, ex
     if (!expense) return;
 
     const updatedExpense = { ...expense, category, amount: parseFloat(amount), date };
-    
-    axios.put(`http://localhost:8080/api/expenses/${expense.id}`, updatedExpense)
+    const userId = localStorage.getItem('userId');
+    axios.put(`http://localhost:8080/api/expenses/${userId}/${expense.id}`, updatedExpense)
       .then(() => {
         onUpdate(updatedExpense);
         onClose();

@@ -58,7 +58,8 @@ const ExpenseList = ({ expenses, setExpenses, categories, selectedMonth }) => {
     }, [selectedMonth, expenses]);
     const [categoryTotals, setCategoryTotals] = (0, react_1.useState)({});
     const handleDelete = (id) => {
-        axios_1.default.delete(`http://localhost:8080/api/expenses/${id}`)
+        const userId = Number(localStorage.getItem("userId"));
+        axios_1.default.delete(`http://localhost:8080/api/expenses/${userId}/${id}`)
             .then(() => {
             setExpenses(prevExpenses => prevExpenses.filter(expense => expense.id !== id));
         })

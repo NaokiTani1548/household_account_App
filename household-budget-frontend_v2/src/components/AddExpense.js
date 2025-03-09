@@ -22,31 +22,49 @@ var __importStar = (this && this.__importStar) || function (mod) {
     __setModuleDefault(result, mod);
     return result;
 };
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 const react_1 = __importStar(require("react"));
-const axios_1 = __importDefault(require("axios"));
 const material_1 = require("@mui/material");
 const AddExpense = ({ onAddExpense, categories }) => {
     const [category, setCategory] = (0, react_1.useState)('');
     const [amount, setAmount] = (0, react_1.useState)('');
     const [date, setDate] = (0, react_1.useState)('');
-    const handleSubmit = (e) => {
+    const handleSubmit = (e) => __awaiter(void 0, void 0, void 0, function* () {
         e.preventDefault();
-        const expense = { category, amount: parseFloat(amount), date };
-        axios_1.default.post('http://localhost:8080/api/expenses', expense)
-            .then(response => {
-            onAddExpense(response.data);
+        const userId = localStorage.getItem('userId');
+        const expense = { category: category, amount: parseFloat(amount), date: date, userId: Number(userId) };
+        try {
+            const response = yield fetch("http://localhost:8080/api/expenses", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": `Bearer ${localStorage.getItem("jwt")}`,
+                },
+                body: JSON.stringify(expense),
+            });
+            if (!response.ok) {
+                throw new Error("Failed to add expense");
+            }
+            const data = yield response.json();
+            console.log("Expense added:", data);
             setCategory('');
             setAmount('');
             setDate('');
-        })
-            .catch(error => {
-            console.error('Error adding expense:', error);
-        });
-    };
+            onAddExpense(data);
+        }
+        catch (error) {
+            console.error("Error adding expense:", error);
+        }
+    });
     return (react_1.default.createElement(material_1.Box, { component: "form", onSubmit: handleSubmit, sx: { display: 'flex', flexDirection: 'column', gap: 2 } },
         react_1.default.createElement(material_1.FormControl, { fullWidth: true, variant: "outlined" },
             react_1.default.createElement(material_1.InputLabel, null, "Category"),
