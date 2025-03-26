@@ -95,3 +95,29 @@ To learn more about React Native, take a look at the following resources:
 - [Learn the Basics](https://reactnative.dev/docs/getting-started) - a **guided tour** of the React Native **basics**.
 - [Blog](https://reactnative.dev/blog) - read the latest official React Native **Blog** posts.
 - [`@facebook/react-native`](https://github.com/facebook/react-native) - the Open Source; GitHub **repository** for React Native.
+
+# 開発実行(コマンドプロンプト　管理者権限)
+
+## 1.リポジトリへ移動
+
+```bash
+cd ../../Users/naoki/eclipse-workspace/eclipse-workspace2/household_account_app-v1/household_mobile_v1
+```
+
+## 2.スマホの接続確認
+
+```bash
+adb devices
+```
+
+## 3.Metro 起動
+
+```bash
+npx react-native start
+```
+
+## 4.アプリ起動
+
+```bash
+npx react-native run-android
+```
