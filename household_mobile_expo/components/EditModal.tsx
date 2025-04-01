@@ -1,5 +1,7 @@
 import { styles } from "@/styles/styles";
-import { Modal, View, Text, TextInput, Button } from "react-native";
+import React, { useState } from "react";
+import { Modal, View, Text, TextInput, Button, TouchableOpacity, Platform } from "react-native";
+import DateTimePicker from "@react-native-community/datetimepicker";
 
 type Props = {
     isModalVisible: boolean;
@@ -14,6 +16,14 @@ type Props = {
 }
 
 export const EditModal = ({ isModalVisible, setIsModalVisible, category, setCategory, date, setDate, amount, setAmount, handleUpdate }: Props) => {
+    const [showDatePicker, setShowDatePicker] = useState(false);
+    const handleDateChange = (event: any, selectedDate?: Date) => {
+        setShowDatePicker(false);
+        if (selectedDate) {
+          const formattedDate = selectedDate.toISOString().split("T")[0]; // "YYYY-MM-DD"形式に変換
+          setDate(formattedDate);
+        }
+    };
     return (
         <Modal
             visible={isModalVisible}
@@ -34,12 +44,22 @@ export const EditModal = ({ isModalVisible, setIsModalVisible, category, setCate
                 />
 
                 <Text style={styles.label}>日付：</Text>
-                <TextInput
+                <TouchableOpacity onPress={() => setShowDatePicker(true)}>
+                    <TextInput
                     style={styles.input}
-                    placeholder="YYYY-MM-DD"
+                    placeholder="日付を選択"
                     value={date}
-                    onChangeText={setDate}
-                />
+                    editable={false}
+                    />
+                </TouchableOpacity>
+                {showDatePicker && (
+                    <DateTimePicker
+                    value={date ? new Date(date) : new Date()}
+                    mode="date"
+                    display={Platform.OS === "ios" ? "spinner" : "default"}
+                    onChange={handleDateChange}
+                    />
+                )}
 
                 <Text style={styles.label}>料金：</Text>
                 <TextInput

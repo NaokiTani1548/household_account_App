@@ -3,7 +3,10 @@ import {
   View, 
   FlatList, 
   SafeAreaView, 
-  StatusBar 
+  StatusBar, 
+  Button, 
+  Text,
+  Modal
 } from "react-native";
 import * as SQLite from "expo-sqlite";
 import type { Expense } from "../../type/types";
@@ -17,8 +20,10 @@ export default function HomeScreen() {
   const [category, setCategory] = useState("");
   const [amount, setAmount] = useState("");
   const [date, setDate] = useState("");
-  const [isModalVisible, setIsModalVisible] = useState(false);
+  const [isEditModalVisible, setIsEditModalVisible] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
+  const [isDeleteModalVisible, setIsDeleteModalVisible] = useState(false); // 削除モーダルの表示状態
+  const [deletingId, setDeletingId] = useState<number | null>(null);
 
   useEffect(() => {
     async function setupDataBase() {
@@ -63,7 +68,7 @@ export default function HomeScreen() {
       setAmount(expenseToEdit.amount.toString());
       setDate(expenseToEdit.date);
       setEditingId(id);
-      setIsModalVisible(true);
+      setIsEditModalVisible(true);
     }
   };
 
@@ -78,13 +83,18 @@ export default function HomeScreen() {
         `, [category, amount, date, editingId]);
         const result: Expense[] = await db.getAllSync("SELECT * FROM expenses;");
         setData(result);
-        setIsModalVisible(false);
+        setIsEditModalVisible(false);
         setEditingId(null);
         handleReset();
       } catch (error) {
         console.log("Error", error);
       }
     }
+  };
+
+  const confirmDelete = (id: number) => {
+    setDeletingId(id);
+    setIsDeleteModalVisible(true);
   };
 
   const handleDelete = async (id: number) => {
@@ -96,6 +106,8 @@ export default function HomeScreen() {
     } catch (error) {
       console.log("Error", error);
     }
+    setIsDeleteModalVisible(false);
+    setDeletingId(null);
   };
 
   const handleReset = () => {
@@ -103,7 +115,9 @@ export default function HomeScreen() {
     setAmount("");
     setDate("");
     setEditingId(null);
-    setIsModalVisible(false);
+    setDeletingId(null);
+    setIsEditModalVisible(false);
+    setIsDeleteModalVisible(false);
   };
 
   return (
@@ -125,17 +139,33 @@ export default function HomeScreen() {
         {/* 家計簿リスト */}
         <FlatList
           data={data}
-          renderItem={({ item }) => renderItem({ item, handleDelete, handleEdit })}
+          renderItem={({ item }) => renderItem({ item, handleEdit ,confirmDelete})}
           keyExtractor={(item) => item.id.toString()}
           style={[styles.list, {flex: 1}]}
           scrollEnabled={true}
         />
+        <Modal
+          visible={isDeleteModalVisible}
+          animationType="slide"
+          transparent={true}
+          onRequestClose={() => setIsDeleteModalVisible(false)}
+        >
+          <View style={styles.modalOverlay}>
+            <View style={styles.modalContainer}>
+              <Text style={styles.label}>削除しますか？</Text>
+              <View style={styles.modalButtons}>
+                <Button title="確定" color="#FF0000" onPress={() => deletingId !== null && handleDelete(deletingId)} />
+                <Button title="キャンセル" color="#00FF00" onPress={() => setIsDeleteModalVisible(false)} />
+              </View>
+            </View>
+          </View>
+        </Modal>
       </View>
 
       {/* 編集モーダル */}
       <EditModal
-        isModalVisible={isModalVisible}
-        setIsModalVisible={setIsModalVisible}
+        isModalVisible={isEditModalVisible}
+        setIsModalVisible={setIsEditModalVisible}
         category={category}
         setCategory={setCategory}
         date={date}

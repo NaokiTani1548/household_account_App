@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { 
   StyleSheet, 
   Text, 
@@ -9,13 +9,9 @@ import {
 } from "react-native";
 import * as SQLite from "expo-sqlite";
 import { Calendar } from "react-native-calendars";
+import type { Expense } from "../../type/types";
+import { useFocusEffect } from "@react-navigation/native";
 
-type Expense = {
-  id: number;
-  category: string;
-  amount: number;
-  date: string;
-};
 
 export default function ExpenseCalendarScreen() {
   const [data, setData] = useState<Expense[]>([]);
@@ -23,30 +19,38 @@ export default function ExpenseCalendarScreen() {
   const [monthlyTotal, setMonthlyTotal] = useState<number>(0);
   const [categorizedExpenses, setCategorizedExpenses] = useState<any>({});
 
-  useEffect(() => {
-    // SQLiteデータベースをセットアップ
-    async function setupDataBase() {
-      try {
-        const db = await SQLite.openDatabaseAsync("expenses.db");
-        await db.execAsync(`
-          CREATE TABLE IF NOT EXISTS expenses (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            category TEXT NOT NULL,
-            amount INTEGER NOT NULL,
-            date TEXT NOT NULL
-          );
-        `);
-        const result: Expense[] = await db.getAllSync("SELECT * FROM expenses;");
-        setData(result);
-        calculateMonthlyTotal(selectedMonth);
-        categorizeExpenses(selectedMonth);
-      } catch (error) {
-        console.log("Error", error);
-      }
-    }
-    setupDataBase();
+  const fetchAndUpdateData = useCallback(async () => {
+    try {
+      const db = await SQLite.openDatabaseAsync("expenses.db");
+      await db.execAsync(`
+        CREATE TABLE IF NOT EXISTS expenses (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          category TEXT NOT NULL,
+          amount INTEGER NOT NULL,
+          date TEXT NOT NULL
+        );
+      `);
+      const result: Expense[] = await db.getAllSync("SELECT * FROM expenses;");
+      setData(result);
 
-  }, []);
+      // 月ごとの計算やカテゴリ分けを再実行
+      calculateMonthlyTotal(selectedMonth);
+      categorizeExpenses(selectedMonth);
+    } catch (error) {
+      console.log("Error", error);
+    }
+  }, [selectedMonth]);
+
+  useFocusEffect(
+    useCallback(() => {
+      fetchAndUpdateData();
+    }, [fetchAndUpdateData])
+  );
+
+  useEffect(() => {
+    calculateMonthlyTotal(selectedMonth);
+    categorizeExpenses(selectedMonth);
+  }, [selectedMonth, data]);
 
   // 月ごとの支出合計を計算
   const calculateMonthlyTotal = (month: string) => {
@@ -78,8 +82,6 @@ export default function ExpenseCalendarScreen() {
   const onMonthChange = (month: { dateString: string }) => {
     const selectedMonth = month.dateString.slice(0, 7); // "YYYY-MM" 形式に切り取る
     setSelectedMonth(selectedMonth);
-    calculateMonthlyTotal(selectedMonth);
-    categorizeExpenses(selectedMonth);
   };
 
   const renderCategoryItem = ({ item, index }: { item: any, index: number }) => {

@@ -6,11 +6,11 @@ import { styles } from "@/styles/styles";
 type Props = {
     item: Expense;
     handleEdit: (id: number) => void;
-    handleDelete: (id: number) => void;
+    confirmDelete: (id: number) => void;
 };
 
 
-export const renderItem = ({item, handleDelete, handleEdit}: Props) => (
+export const renderItem = ({item, handleEdit, confirmDelete}: Props) => (
     <View style={styles.item}>
       <View style={styles.itemTextContainer}>
         <Text style={styles.itemText}>カテゴリー: {item.category}</Text>
@@ -29,7 +29,7 @@ export const renderItem = ({item, handleDelete, handleEdit}: Props) => (
           name="delete" 
           size={24} 
           color="#E53935" 
-          onPress={() => handleDelete(item.id)} 
+          onPress={() => confirmDelete(item.id)} 
           style={styles.icon} 
         />
       </View>

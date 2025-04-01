@@ -70,4 +70,23 @@ export const styles = StyleSheet.create({
     fontWeight: "bold",
     marginBottom: 10,
   },
+  dropdownIcon: {
+    paddingHorizontal: 10,
+  },
+  dropdownText: {
+    fontSize: 16,
+    color: "#FFA726",
+  },
+  pickerContainer: {
+    marginTop: 10,
+    borderColor: "#FFA726",
+    borderWidth: 1,
+    borderRadius: 8,
+    backgroundColor: "#FFF",
+  },
+  modalButtons: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginTop: 20,
+  },
 });
