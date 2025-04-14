@@ -4,3 +4,10 @@ export type Expense = {
     amount: number;
     date: string;
 };
+
+export type Diary = {
+    id: number;
+    user: string;
+    content: string;
+    date: string;
+  };

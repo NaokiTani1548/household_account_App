@@ -89,4 +89,16 @@ export const styles = StyleSheet.create({
     justifyContent: "space-between",
     marginTop: 20,
   },
+  totalContainer: {
+    marginTop: 20,
+    padding: 10,
+    backgroundColor: "#FFCC80",
+    borderRadius: 10,
+    marginHorizontal: 20,
+  },
+  totalText: {
+    fontSize: 18,
+    fontWeight: "bold",
+    color: "#333",
+  },
 });

@@ -34,7 +34,7 @@ export default function RootLayout() {
       {/* react-native の StatusBar（背景色を設定） */}
       <RNStatusBar backgroundColor="#FFA726" barStyle="light-content" />
       <View style={styles.header}>
-        <Text style={styles.headerText}>家計簿アプリ</Text>
+        <Text style={styles.headerText}>MeMock</Text>
       </View>
       <Stack>
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />

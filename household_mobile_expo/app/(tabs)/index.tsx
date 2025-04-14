@@ -1,180 +1,126 @@
-import React, { useState, useEffect } from "react";
-import { 
-  View, 
-  FlatList, 
-  SafeAreaView, 
-  StatusBar, 
-  Button, 
-  Text,
-  Modal
-} from "react-native";
+import { Expense } from "@/type/types";
+import { SafeAreaView, ScrollView, Text, View } from "react-native";
+import { styles } from "@/styles/styles";
+import { useCallback, useEffect, useState } from "react";
 import * as SQLite from "expo-sqlite";
-import type { Expense } from "../../type/types";
-import { styles } from "../../styles/styles";
-import { renderItem } from "@/components/ExpenseItem";
-import { ExpenseForm } from "@/components/ExpenseForm";
-import { EditModal } from "@/components/EditModal";
+import { PieChart } from "react-native-chart-kit";
+import { LineChart } from "react-native-chart-kit";
+import { calculateCategoryPercentages, calculateMonthlyTotals } from "@/util/data_processing";
+import { Dimensions } from "react-native";
+import { useFocusEffect } from "@react-navigation/native";
 
-export default function HomeScreen() {
-  const [data, setData] = useState<Expense[]>([]);
-  const [category, setCategory] = useState("");
-  const [amount, setAmount] = useState("");
-  const [date, setDate] = useState("");
-  const [isEditModalVisible, setIsEditModalVisible] = useState(false);
-  const [editingId, setEditingId] = useState<number | null>(null);
-  const [isDeleteModalVisible, setIsDeleteModalVisible] = useState(false); // 削除モーダルの表示状態
-  const [deletingId, setDeletingId] = useState<number | null>(null);
-
-  useEffect(() => {
-    async function setupDataBase() {
-      try {
-        const db = await SQLite.openDatabaseAsync("expenses.db");
-        await db.execAsync(`
-          CREATE TABLE IF NOT EXISTS expenses (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            category TEXT NOT NULL,
-            amount INTEGER NOT NULL,
-            date TEXT NOT NULL
-          );
-        `);
-        const result: Expense[] = await db.getAllSync("SELECT * FROM expenses;");
-        setData(result);
-      } catch (error) {
-        console.log("Error", error);
-      }
+const PieGraph = ({ data }: { data: Expense[] }) => {
+  const percentages = calculateCategoryPercentages(data);
+  const getRandomColor = (): string => {
+    const letters = "0123456789ABCDEF";
+    let color = "#";
+    for (let i = 0; i < 6; i++) {
+      color += letters[Math.floor(Math.random() * 16)];
     }
-    setupDataBase();
-  }, []);
-
-  const insertData = async () => {
-    try {
-      const db = await SQLite.openDatabaseAsync("expenses.db");
-      await db.runAsync(`
-        INSERT INTO expenses (category, amount, date)
-        VALUES (?, ?, ?);
-      `, [category, amount, date]);
-      const result: Expense[] = await db.getAllSync("SELECT * FROM expenses;");
-      setData(result);
-      handleReset();
-    } catch (error) {
-      console.log("Error", error);
-    }
+    return color;
   };
+  const chartData = Object.keys(percentages).map((category) => ({
+    name: category,
+    population: percentages[category],
+    color: getRandomColor(), // ランダムで色を生成する関数を作ると便利です
+    legendFontColor: "#7F7F7F",
+    legendFontSize: 15,
+  }));
 
-  const handleEdit = (id: number) => {
-    const expenseToEdit = data.find((item) => item.id === id);
-    if (expenseToEdit) {
-      setCategory(expenseToEdit.category);
-      setAmount(expenseToEdit.amount.toString());
-      setDate(expenseToEdit.date);
-      setEditingId(id);
-      setIsEditModalVisible(true);
-    }
-  };
+  return (
+    <PieChart
+      data={chartData}
+      width={Dimensions.get("window").width - 20}
+      height={220}
+      chartConfig={{
+        color: () => "rgba(255, 255, 255, 1)",
+        backgroundColor: "#FFFAFA",
+      }}
+      accessor="population"
+      backgroundColor="transparent"
+      paddingLeft="15"
+    />
+  );
+};
 
-  const handleUpdate = async () => {
-    if (editingId !== null) {
-      try {
-        const db = await SQLite.openDatabaseAsync("expenses.db");
-        await db.runAsync(`
-          UPDATE expenses
-          SET category = ?, amount = ?, date = ?
-          WHERE id = ?;
-        `, [category, amount, date, editingId]);
-        const result: Expense[] = await db.getAllSync("SELECT * FROM expenses;");
-        setData(result);
-        setIsEditModalVisible(false);
-        setEditingId(null);
-        handleReset();
-      } catch (error) {
-        console.log("Error", error);
-      }
-    }
-  };
-
-  const confirmDelete = (id: number) => {
-    setDeletingId(id);
-    setIsDeleteModalVisible(true);
-  };
-
-  const handleDelete = async (id: number) => {
-    try {
-      const db = await SQLite.openDatabaseAsync("expenses.db");
-      await db.runAsync(`DELETE FROM expenses WHERE id = ?;`, [id]);
-      const result: Expense[] = await db.getAllSync("SELECT * FROM expenses;");
-      setData(result);
-    } catch (error) {
-      console.log("Error", error);
-    }
-    setIsDeleteModalVisible(false);
-    setDeletingId(null);
-  };
-
-  const handleReset = () => {
-    setCategory("");
-    setAmount("");
-    setDate("");
-    setEditingId(null);
-    setDeletingId(null);
-    setIsEditModalVisible(false);
-    setIsDeleteModalVisible(false);
+const LineGraph = ({ data }: { data: Expense[] }) => {
+  const monthlyData = calculateMonthlyTotals(data);
+  const chartData = {
+    labels: monthlyData.map((item) => item.month),
+    datasets: [{ data: [0, ...monthlyData.map((item) => item.total)] }],
   };
 
   return (
-    <SafeAreaView style={[styles.container, {flex: 1}]}>
-      <StatusBar backgroundColor="#FFA726" barStyle="light-content" />
-      
-      {/* メインコンテンツ */}
-      <View style={[styles.content, {flex: 1}]}>
-        <ExpenseForm 
-          category={category}
-          date={date}
-          amount={amount}
-          onCategoryChange={setCategory}
-          onDateChange={setDate}
-          onAmountChange={setAmount}
-          onSubmit={insertData}
-        />
-        
-        {/* 家計簿リスト */}
-        <FlatList
-          data={data}
-          renderItem={({ item }) => renderItem({ item, handleEdit ,confirmDelete})}
-          keyExtractor={(item) => item.id.toString()}
-          style={[styles.list, {flex: 1}]}
-          scrollEnabled={true}
-        />
-        <Modal
-          visible={isDeleteModalVisible}
-          animationType="slide"
-          transparent={true}
-          onRequestClose={() => setIsDeleteModalVisible(false)}
-        >
-          <View style={styles.modalOverlay}>
-            <View style={styles.modalContainer}>
-              <Text style={styles.label}>削除しますか？</Text>
-              <View style={styles.modalButtons}>
-                <Button title="確定" color="#FF0000" onPress={() => deletingId !== null && handleDelete(deletingId)} />
-                <Button title="キャンセル" color="#00FF00" onPress={() => setIsDeleteModalVisible(false)} />
-              </View>
-            </View>
-          </View>
-        </Modal>
-      </View>
+    <LineChart
+      data={chartData}
+      width={Dimensions.get("window").width - 20}
+      height={220}
+      chartConfig={{
+        backgroundGradientFrom: "#FFA726",
+        backgroundGradientTo: "#FF7043",
+        color: (opacity = 1) => `rgba(255, 255, 255, ${opacity})`,
+      }}
+    />
+  );
+};
 
-      {/* 編集モーダル */}
-      <EditModal
-        isModalVisible={isEditModalVisible}
-        setIsModalVisible={setIsEditModalVisible}
-        category={category}
-        setCategory={setCategory}
-        date={date}
-        setDate={setDate}
-        amount={amount}
-        setAmount={setAmount}
-        handleUpdate={handleUpdate}
-      />
+
+export default function HomeScreen() {
+  const [data, setData] = useState<Expense[]>([]);
+  const [selectedMonth, setSelectedMonth] = useState<string>(new Date().toISOString().slice(0, 7)); // "YYYY-MM" 形式
+  const [monthlyTotal, setMonthlyTotal] = useState<number>(0);
+  const getCurrentYearMonth = (): string => {
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = now.getMonth() + 1; // JavaScriptの月は0から始まるので+1
+    return `${year}-${String(month).padStart(2, "0")}`; // 月を2桁にフォーマット
+  };
+  const calculateMonthlyTotal = (month: string) => {
+    const total = data.filter(expense => expense.date.slice(0, 7) === month)
+                      .reduce((sum, expense) => sum + expense.amount, 0);
+    setMonthlyTotal(total);
+  };
+  const fetchData = useCallback(async () => {
+      async function setupDataBase() {
+        try {
+          const db = await SQLite.openDatabaseAsync("expenses.db");
+          await db.execAsync(`
+            CREATE TABLE IF NOT EXISTS expenses (
+              id INTEGER PRIMARY KEY AUTOINCREMENT,
+              category TEXT NOT NULL,
+              amount INTEGER NOT NULL,
+              date TEXT NOT NULL
+            );
+          `);
+          const result: Expense[] = await db.getAllSync("SELECT * FROM expenses;");
+          const sortedData = result.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+          setData(sortedData);
+        } catch (error) {
+          console.log("Error", error);
+        }
+      }
+      setupDataBase();
+      const month = getCurrentYearMonth();
+      calculateMonthlyTotal(month);
+    }, []);
+
+    useFocusEffect(
+        useCallback(() => {
+          fetchData();
+        }, [fetchData])
+      );
+  return (
+    <SafeAreaView style={[styles.container, { flex: 1 }]}>
+      <ScrollView>
+        <View style={styles.totalContainer}>
+            <Text style={styles.totalText}>{selectedMonth}合計支出額: {monthlyTotal} 円</Text>
+        </View>
+        <Text style={styles.label}>カテゴリー別支出割合</Text>
+        <PieGraph data={data} />
+
+        <Text style={styles.label}>月ごとの合計支出</Text>
+        <LineGraph data={data} />
+      </ScrollView>
     </SafeAreaView>
   );
-}
-
+};
