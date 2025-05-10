@@ -1,6 +1,6 @@
 # 成果物説明
 ### 家計簿アプリ_v1
-- EC2上にアプリケーションを構築
+- EC2上にアプリケーションを構築(VPC, EC2, RDSを使用)
 - CRUD操作の実装
 - FE: thymeleaf / BE: Java(spring)
 ![household_app_v1](スクリーンショット家計簿_v1.jpg)
